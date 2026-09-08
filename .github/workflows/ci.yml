@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  test-and-train:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,3 +17,12 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt pytest
       - run: python -m pytest -q
+      - name: Train and evaluate on IBM Telco data
+        run: python -m src.train
+      - name: Upload model metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: churn-model-metrics
+          path: |
+            models/model_metrics.json
+            data/processed/feature_importance.csv
