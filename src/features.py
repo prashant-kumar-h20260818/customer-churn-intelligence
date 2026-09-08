@@ -80,6 +80,10 @@ class ChurnFeatureEngineer(BaseEstimator, TransformerMixin):
     """Create business-oriented churn features inside a sklearn Pipeline."""
 
     def fit(self, X: pd.DataFrame, y=None):  # noqa: N803
+        frame = X.copy()
+        validate_columns(frame)
+        monthly = pd.to_numeric(frame["MonthlyCharges"], errors="coerce")
+        self.monthly_charge_median_ = float(monthly.median())
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:  # noqa: N803
@@ -101,7 +105,11 @@ class ChurnFeatureEngineer(BaseEstimator, TransformerMixin):
         frame["AvgMonthlySpend"] = frame["TotalCharges"] / tenure_safe
         frame["NewCustomer"] = (frame["tenure"] <= 6).astype(int)
 
-        median_charge = frame["MonthlyCharges"].median()
+        median_charge = getattr(
+            self,
+            "monthly_charge_median_",
+            float(frame["MonthlyCharges"].median()),
+        )
         frame["HighMonthlyCharges"] = (frame["MonthlyCharges"] > median_charge).astype(int)
         frame["AutomaticPayment"] = frame["PaymentMethod"].str.contains(
             "automatic", case=False, na=False
